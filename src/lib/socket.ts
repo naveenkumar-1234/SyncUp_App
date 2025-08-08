@@ -6,7 +6,7 @@ type SocketType =typeof io.Socket;
 let socket: SocketType | null = null;
 
 export const initializeSocket = (token: string): SocketType => {
-  socket = io("https://ff0f87b6-674b-4117-8323-a06875603259-00-16iv0uh6aaigq.pike.repl.co/", {
+  socket = io("http://localhost:3000", {
     auth: { token },
     transports: ["websocket"],
     autoConnect: true

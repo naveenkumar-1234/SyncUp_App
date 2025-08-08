@@ -16,6 +16,8 @@ interface AuthContextType {
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   socket: ReturnType<typeof getSocket> | null;
+  getLocalUser: () => void;
+  isSocketConnected: boolean
 }
 
 const AuthContext = createContext<AuthContextType>(null!);
@@ -24,21 +26,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [socket, setSocket] = useState<ReturnType<typeof getSocket> | null>(null);
 
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
+
   
    useEffect(() => {
-    if (user?.token) {
+    // let socketInstance: ReturnType<typeof getSocket> | null = null;
+    // console.log("in socket useeffect");
+    if(!user?.token) {
+      console.log("user dont have token")
+      return
+    }
+
+    
+      // console.log("user token if socket");
+      
+    try {
       const newSocket = initializeSocket(user.token);
+
+      newSocket.on("connect",()=>{
+        setIsSocketConnected(true);
+        console.log("socket connected in auth provider")
+      })
+       newSocket.on('disconnect', () => {
+       setIsSocketConnected(false);
+  });
       setSocket(newSocket);
+      console.log("socket setted")
 
       return () => {
+        newSocket.off('connect');
+        newSocket.off('disconnect');
+        // console.log("in effect of socket init , disconnecting");
+        
         disconnectSocket();
       };
+    } catch (err) {
+      console.error("Failed to initialize socket:", err);
     }
-  }, [user?.token]);
+  
+  } ,[user?.token]);
+
+  useEffect(()=>{
+
+    const loadUser = () =>{
+      try {
+        const token = localStorage.getItem('token');
+        const existingUser = localStorage.getItem('user');
+        if(token && existingUser){
+          const userData = JSON.parse(existingUser);
+          setUser({
+            id: userData.id,
+          username: userData.username,
+          email: userData.email,
+          token: token
+          })
+        }
+        
+      } catch (error) {
+        console.error("Failed to load user from localStorage:", error);
+      logout();
+        
+      }
+    }
+    loadUser()
+  },[])
 
   const register = async (username: string, email: string, password: string) => {
     try {
-      const response = await fetch('https://ff0f87b6-674b-4117-8323-a06875603259-00-16iv0uh6aaigq.pike.repl.co/api/register', {
+      const response = await fetch('http://localhost:3000/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password }),
@@ -58,16 +113,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       localStorage.setItem("token", data.token);
+
+      localStorage.setItem("user", JSON.stringify(data.user));
       toast.success('Registration successful');
     } catch (error) {
       toast.error('Registration failed');
       throw error;
     }
   };
+  // const getLocalUser = () => {
+  //   const existingUser =  localStorage.getItem('user');
+  //   const token : string | null = localStorage.getItem('token');
+
+  //   console.log(existingUser?.username);
+  //   console.log(existingUser?.email);
+  //   console.log(token);
+    
+    
+
+  // }
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch('https://ff0f87b6-674b-4117-8323-a06875603259-00-16iv0uh6aaigq.pike.repl.co/api/login', {
+      const response = await fetch('http://localhost:3000/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -87,6 +155,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       localStorage.setItem("token", data.token);
+            localStorage.setItem("user", JSON.stringify(data.user));
+
       toast.success('Login successful');
     } catch (error) {
       toast.error('Login failed');
@@ -102,9 +172,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("token");
     toast('Logged out successfully');
   };
-
+  const getLocalUser = () => {
+  const userString = localStorage.getItem('user');
+  return userString ? JSON.parse(userString) : null;
+};
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, socket }}>
+    <AuthContext.Provider value={{ user, login, register, logout, socket , getLocalUser  , isSocketConnected}}>
       {children}
     </AuthContext.Provider>
   );

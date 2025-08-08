@@ -20,26 +20,30 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
-        <Label htmlFor="email">Email</Label>
+        <div >
+        <Label htmlFor="email" className='pb-2'>Email</Label>
         <Input
           id="email"
           type="email"
+          className='py-5 mb-2'
           {...register('email', { required: 'Email is required' })}
         />
         {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
       </div>
       
       <div>
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password" className='pb-2'>Password</Label>
         <Input
           id="password"
           type="password"
+          className='py-5'
           {...register('password', { required: 'Password is required' })}
         />
         {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
       </div>
+      </div>
       
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button type="submit" className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white" disabled={isSubmitting}>
         {isSubmitting ? 'Logging in...' : 'Login'}
       </Button>
     </form>

@@ -1,13 +1,17 @@
+import { useEffect } from "react";
 import { useAuth } from "./context/AuthContext";
 import { AuthPage } from "./pages/AuthPage";
-import ChatLayout from "./pages/ChatLayout";
+import HomeLayout from "./pages/HomeLayout";
 
 
 export const AppContent = () =>{
-    const { user } = useAuth();
+    const { user ,getLocalUser } = useAuth();
+    // useEffect(()=>{
+    //     getLocalUser()
+    // },[])
     return(
         <div className="min-h-screen">
-            {user ? <ChatLayout/> : <AuthPage/>}
+            {user ? <HomeLayout/> : <AuthPage/>}
         </div>
     )
 }
